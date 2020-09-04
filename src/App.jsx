@@ -19,6 +19,7 @@ firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
 
 const messageCollection = db.collection('messages')
+const messageDoc = messageCollection.doc('message');
 
 
 function App() {
@@ -27,15 +28,17 @@ function App() {
   
   const handleSendMessage = () => {
     if (message.trim() === "" || message.length > 255) return;
-    messageCollection.add({ message: message, timestamp: new Date() });
+    messageDoc.set({
+      messages: firebase.firestore.FieldValue.arrayUnion({
+        timestamp: new Date(),
+        message
+      })
+    }, { merge: true });
     setMessage("");
   }
 
   useEffect(() => {
-    messageCollection.orderBy('timestamp').onSnapshot(snaps => {
-      const messages = snaps.docs.map(doc => doc.data())
-      setChatMessages(messages);
-    })
+    messageDoc.onSnapshot(snap => setChatMessages(snap.data().messages));
   }, [])
 
   console.log(chatMessages)
